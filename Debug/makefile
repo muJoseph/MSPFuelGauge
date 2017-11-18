@@ -11,6 +11,9 @@ GEN_CMDS__FLAG :=
 
 ORDERED_OBJS += \
 "./Application/main.obj" \
+"./Application/muJoe_i2cTask.obj" \
+"./Application/muJoe_mainTask.obj" \
+"./Application/muJoe_taskMgr.obj" \
 "./Application/structure.obj" \
 "./Library/CTS_HAL.obj" \
 "./Library/CTS_Layer.obj" \
@@ -160,8 +163,8 @@ MSPFuelGauge.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "Application\main.obj" "Application\structure.obj" "Library\CTS_HAL.obj" "Library\CTS_Layer.obj" 
-	-$(RM) "Application\main.d" "Application\structure.d" "Library\CTS_HAL.d" "Library\CTS_Layer.d" 
+	-$(RM) "Application\main.obj" "Application\muJoe_i2cTask.obj" "Application\muJoe_mainTask.obj" "Application\muJoe_taskMgr.obj" "Application\structure.obj" "Library\CTS_HAL.obj" "Library\CTS_Layer.obj" 
+	-$(RM) "Application\main.d" "Application\muJoe_i2cTask.d" "Application\muJoe_mainTask.d" "Application\muJoe_taskMgr.d" "Application\structure.d" "Library\CTS_HAL.d" "Library\CTS_Layer.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

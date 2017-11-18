@@ -50,6 +50,7 @@
 //
 //******************************************************************************
 #include "CTS_Layer.h"
+#include "muJoe_taskMgr.h"
 
 // Uncomment to have this compiler directive run characterization functions only
 // Comment to have this compiler directive run example application
