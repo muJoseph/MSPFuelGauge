@@ -30,5 +30,14 @@ typedef signed short        int16;
 typedef unsigned int        uint32;
 typedef signed int          int32;
 
+typedef enum
+{
+   FALSE    = 0x00,
+   TRUE     = 0x01,
+}bool;
+
+typedef bool boolean;
+typedef bool bool_t;
+
 
 #endif /* MUJOE_TYPES_H_ */

@@ -114,4 +114,6 @@ SUBDIRS := \
 . \
 Application \
 Library \
+mujoeDrivers \
+mujoeOS \
 
