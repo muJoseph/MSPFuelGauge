@@ -25,6 +25,18 @@ static void taskMgr_updateEventFlags( void );
 // EXTERN VAR
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// GLOBAL VAR
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+taskMgr_t    taskMgr =
+{
+   .currTaskID = 0,
+   .eventsArrBuffered = {0},
+   .eventsArr = {0},
+}; // taskMgr
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // LOCAL VAR
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -36,13 +48,6 @@ const static taskEvtProcesssor_t taskEvtProcesssorArr[TASKMGR_NUM_TASKS] =
      mainTask_evtProcessor,         // TaskId = 2
 }; // taskEvtProcesssorArr
 
-static taskMgr_t    taskMgr =
-{
-   .currTaskID = 0,
-   .eventsArrBuffered = {0},
-   .eventsArr = {0},
-}; // taskMgr
-
 static uint8 timedEvtTaskId = 0;   // TEST
 static uint16 timedEvtFlag = 0;     // TEST
 
@@ -50,7 +55,7 @@ static uint16 timedEvtFlag = 0;     // TEST
 // MACROS
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define taskMgr_setEventISR(X,Y)       if( (X) < TASKMGR_NUM_TASKS ){taskMgr.eventsArrBuffered[(X)] |= (Y);}
+//#define taskMgr_setEventISR(X,Y)       if( (X) < TASKMGR_NUM_TASKS ){taskMgr.eventsArrBuffered[(X)] |= (Y);}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
@@ -74,6 +79,7 @@ void taskMgr_initTasks( void )
 void taskMgr_runSystem( void )
 {
 
+  // Copy buffered event flags into current task manager loop iteration
   taskMgr_updateEventFlags();
 
   // Go thru each task registered with the taskMgr
@@ -102,6 +108,7 @@ uint8 taskMgr_setEvent( uint8 taskId, uint16 events )
 // and enables the interrupt vector to jump to ISR upon timeout
 void taskMgr_setEventEx( uint8 taskId, uint16 events, uint32 timeEx_ms )
 {
+    // Convert msec interval to CCR0 compare value (dec)
     float countVal = ( (float)timeEx_ms ) * TIME_MS_TO_CCR0_COUNT;
 
     timedEvtTaskId = taskId;   // TEST

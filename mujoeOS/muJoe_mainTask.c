@@ -42,7 +42,7 @@ void mainTask_init( uint8 taskId )
     // Init Task Here
 
     // Set event for first data sample event (DEBUG)
-    taskMgr_setEvent( mainTask_taskId, MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
+    //taskMgr_setEvent( mainTask_taskId, MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
 
 } // mainTask_init
 

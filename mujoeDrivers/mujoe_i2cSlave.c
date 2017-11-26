@@ -26,8 +26,8 @@ static void i2cSlave_pauseUSCI( void );
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Variables used to notify app of state of USCI peripheral and therefore the I2C bus master
-volatile bool i2cPktRxd = FALSE;
-volatile bool i2cMstrReading = FALSE;
+//volatile bool i2cPktRxd = FALSE;
+//volatile bool i2cMstrReading = FALSE;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // LOCAL VAR
@@ -104,7 +104,7 @@ void i2cSlave_prepTransmit( void )
     UCB0TXBUF = mspfgRegMap[i2cSlaveIsr.txBuffIndex++];
     // If at end of the I2C register map, wrap around
     if( i2cSlaveIsr.txBuffIndex == MSPFG_NUM_REGISTERS ){ i2cSlaveIsr.txBuffIndex = 0; }
-    i2cMstrReading = FALSE;
+    //i2cMstrReading = FALSE;
 
 } // i2cSlave_prepTransmit
 
@@ -114,6 +114,9 @@ bool i2cSlave_initDriver( uint8 myAddr, bool genCallRsp )
 
     if( genCallRsp )
        i2cSlave.cfg |= I2CSLAVE_CFG_GENCALLRSP;
+
+    // Initialize I2C "Register Map"
+    mspfg_initRegMap();
 
     return TRUE;
 
@@ -161,7 +164,7 @@ static void i2cSlave_prepReceive( void )
     i2cSlaveIsr.rxBuffIndex = 0;
     i2cSlaveIsr.rxByteCnt = 0;
     //i2cSlaveIsr.rx = TRUE;  // DEFAULT, consider commenting out
-    i2cPktRxd = FALSE;
+    //i2cPktRxd = FALSE;
 
     // Enable RX interrupt
     enableI2cRxInterrupt();
@@ -295,7 +298,7 @@ void __attribute__ ((interrupt(USCIAB0RX_VECTOR))) USCIAB0RX_ISR (void)
      {
        i2cSlaveIsr.rx = FALSE;
        // Notify app to prepare first byte to send to master
-       i2cMstrReading = TRUE;
+       taskMgr_setEventISR( i2cTask_taskId, I2CTASK_HANDLE_MASTER_READ_EVT );
      }
      // I2C Master has cleared R/Wn slave addr bit (Master is writing, slave receiving)
      else
@@ -309,7 +312,7 @@ void __attribute__ ((interrupt(USCIAB0RX_VECTOR))) USCIAB0RX_ISR (void)
   {
      // Notify app if I2C packet was RX'd
      if( i2cSlaveIsr.rx && i2cSlaveIsr.rxByteCnt )
-        i2cPktRxd = TRUE;
+        taskMgr_setEventISR(i2cTask_taskId,I2CTASK_HANDLE_MASTER_WRITE_EVT);
 
      UCB0STAT &= ~UCSTPIFG;
   }

@@ -66,7 +66,6 @@ void mspfg_initRegMap( void )
 {
     mspfgRegMap[MSPFG_WHO_AM_I] = MSPFG_WHO_AM_I_ID;
     mspfgRegMap[MSPFG_DEV_INFO] = MSPFG_HW_VER + MSPFG_FW_VER;
-    //mspfgRegMap[MSPFG_CFG] = 0xEE;  // TEST
 
 } // mspfg_initRegMap
 

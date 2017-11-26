@@ -14,8 +14,10 @@
 
 #include <msp430.h>
 #include <string.h>
-#include "../mujoeDrivers/mujoe_i2cRegMap.h"
+#include "mujoe_i2cRegMap.h"
 #include "mujoe_types.h"
+#include "mujoe_taskMgr.h"
+#include "mujoe_i2cTask.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // DEFINES

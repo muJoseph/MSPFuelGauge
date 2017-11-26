@@ -17,15 +17,25 @@
 // STATIC FUNCTION PROTOS
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+static void i2cTask_masterWriteHandler( void );
+static void i2cTask_masterReadHandler( void );
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // EXTERN VAR
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+// GLOBAL VAR
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+uint8 i2cTask_taskId = 0;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
 // LOCAL VAR
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-static uint8    i2cTask_taskId = 0;
+static uint8    debugVar1 = 0;
+static uint8    debugVar2 = 0;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
@@ -41,6 +51,20 @@ void i2cTask_init( uint8 taskId )
 
 uint16 i2cTask_evtProcessor( uint8 taskId, uint16 events )
 {
+    // I2C Master Read Event
+    if( events & I2CTASK_HANDLE_MASTER_READ_EVT )
+    {
+        i2cTask_masterReadHandler();
+        debugVar2++;
+        return (events ^ I2CTASK_HANDLE_MASTER_READ_EVT);
+    }
+
+    // I2C Master Write Event
+    if( events & I2CTASK_HANDLE_MASTER_WRITE_EVT )
+    {
+        i2cTask_masterWriteHandler();
+        return (events ^ I2CTASK_HANDLE_MASTER_WRITE_EVT);
+    }
 
     // Discard unknown events
     return 0;
@@ -50,3 +74,43 @@ uint16 i2cTask_evtProcessor( uint8 taskId, uint16 events )
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // STATIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+static void i2cTask_masterWriteHandler( void )
+{
+    i2cSlave_rxdPacketHandler();
+
+} // i2cTask_masterWriteHandler
+
+static void i2cTask_masterReadHandler( void )
+{
+    i2cSlave_prepTransmit();
+
+} // i2cTask_masterReadHandler
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// CALLBACK FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Called when Configuration I2C register is written to by
+// I2C bus master
+void mspfg_configRegWriteCb( uint8 regData )
+{
+    if( regData & MSPFG_CFG_EN_HW_INT )
+    {
+        debugVar1++;
+        putBreakPtHere();
+    }
+    else
+    {
+
+    }
+
+} // mspfg_configRegWriteCb
+
+// Called when Fuel Level Critical Threshold I2C register
+// is written to by I2C bus master
+void mspfg_fuelLvlCritThreshRegWriteCb( uint8 regData )
+{
+    putBreakPtHere();
+} // mspfg_fuelLvlCritThreshRegWriteCb
