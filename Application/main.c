@@ -62,13 +62,17 @@ static void configTimers( void );
 void main(void)
 { 
   stopWDT();                            // Stop watchdog timer
-  initBoard();                          // Initialize board
-  initCapMeasurement();                 // Initialize capacitance measurement
   
+  taskMgr_initTasks();                  // Initialize all tasks within task manager
+
+  //initBoard();                          // Initialize board
+  //initCapMeasurement();                 // Initialize capacitance measurement
+
   // Terminal Loop //////////////////////////////////////////////////////////////////////////////
   while (1)
   {
-      runCapMeasurement();              // Perform a capacitance measurement
+      //runCapMeasurement();              // Perform a capacitance measurement
+      taskMgr_runSystem();                // Run Task Manager
   }
 
 } // main
@@ -190,6 +194,7 @@ static void runCapMeasurement( void )
 // INTERRUPT SERVICE ROUTINES
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+/*
 // Timer0_A0 Interrupt Service Routine: Disables the timer and exists LPM3 ////////////////////
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void ISR_Timer0_A0(void)
@@ -198,6 +203,7 @@ __interrupt void ISR_Timer0_A0(void)
   TA0CCTL0 &= ~(CCIE);
   __bic_SR_register_on_exit(LPM3_bits+GIE);
 }
+*/
 
 // Trap ISR ///////////////////////////////////////////////////////////////////////////////////
 #pragma vector=PORT2_VECTOR,             \

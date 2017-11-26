@@ -1,12 +1,12 @@
 /*
- * muJoe_mainTask.h
+ * mujoe_bspTask.h
  *
- *  Created on: Nov 18, 2017
+ *  Created on: Nov 26, 2017
  *      Author: joe
  */
 
-#ifndef MUJOE_MAINTASK_H_
-#define MUJOE_MAINTASK_H_
+#ifndef MUJOEOS_MUJOE_BSPTASK_H_
+#define MUJOEOS_MUJOE_BSPTASK_H_
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // INCLUDE
@@ -14,14 +14,16 @@
 
 #include "mujoe_common.h"
 #include "mujoe_taskMgr.h"
+#include "mujoe_i2cSlave.h"
 #include "mujoe_fuelProbeMgr.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // DEFINES
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Main Task Event Flags
-#define  MAINTASK_GET_FUEL_PROBE_MEAS_EVT               0x0001
+// BSP Task Event Flags
+#define  BSPTASK_ARM_INTERRUPTS_EVT                     0x0001
+#define  BSPTASK_DISARM_INTERRUPTS_EVT                  0x0002
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // TYPEDEFS
@@ -31,7 +33,7 @@
 // FUNCTION PROTOS
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mainTask_init( uint8 taskId );
-uint16 mainTask_evtProcessor( uint8 taskId, uint16 events );
+void bspTask_init( uint8 taskId );
+uint16 bspTask_evtProcessor( uint8 taskId, uint16 events );
 
-#endif /* MUJOE_MAINTASK_H_ */
+#endif /* MUJOEOS_MUJOE_BSPTASK_H_ */

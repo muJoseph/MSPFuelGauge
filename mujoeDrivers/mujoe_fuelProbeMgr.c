@@ -1,7 +1,7 @@
 /*
- * muJoe_mainTask.c
+ * mujoe_fuelProbeMgr.c
  *
- *  Created on: Nov 18, 2017
+ *  Created on: Nov 26, 2017
  *      Author: joe
  */
 
@@ -10,13 +10,11 @@
 // INCLUDE
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "muJoe_mainTask.h"
+#include "mujoe_fuelProbeMgr.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // STATIC FUNCTION PROTOS
 ////////////////////////////////////////////////////////////////////////////////////////////////
-
-static void mainTask_getFuelProbeMeasurement( void );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // EXTERN VAR
@@ -26,48 +24,29 @@ static void mainTask_getFuelProbeMeasurement( void );
 // LOCAL VAR
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-static uint8    mainTask_taskId = 0;
-
-
-static uint16 fuelProbeCnt = 0; // DEBUG
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mainTask_init( uint8 taskId )
+void fuelProbeMgr_initProbe( void )
 {
-    mainTask_taskId = taskId;
+  // Initialize Baseline measurement
+  TI_CAPT_Init_Baseline( &fuelprobe_sensor );
 
-    // Init Task Here
+  // Update baseline measurement (Average 5 measurements)
+  TI_CAPT_Update_Baseline( &fuelprobe_sensor, 5 );
 
-    // Set event for first data sample event (DEBUG)
-    taskMgr_setEvent( mainTask_taskId, MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
+} // fuelProbeMgr_initProbe
 
-} // mainTask_init
-
-uint16 mainTask_evtProcessor( uint8 taskId, uint16 events )
+uint16 fuelProbeMgr_performMeasurement( void )
 {
-    // Measure Fuel Probe Capacitance Event
-    if( events & MAINTASK_GET_FUEL_PROBE_MEAS_EVT )
-    {
-       mainTask_getFuelProbeMeasurement();
-       return (events ^ MAINTASK_GET_FUEL_PROBE_MEAS_EVT);
-    }
+   // Get the raw delta counts for element characterization
+   uint16_t deltaCount = 0;
+   TI_CAPT_Custom( &fuelprobe_sensor, &deltaCount );
+   return deltaCount;
 
-    // Discard unknown events
-    return 0;
-
-} // mainTask_evtProcessor
+} // fuelProbeMgr_performMeasurement
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // STATIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////
-
-static void mainTask_getFuelProbeMeasurement( void )
-{
-    fuelProbeCnt = fuelProbeMgr_performMeasurement();
-    putBreakPtHere();
-    taskMgr_setEventEx( mainTask_taskId, MAINTASK_GET_FUEL_PROBE_MEAS_EVT, 1000 );
-
-} // mainTask_getFuelProbeMeasurement

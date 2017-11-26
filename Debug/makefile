@@ -15,11 +15,13 @@ ORDERED_OBJS += \
 "./Library/CTS_HAL.obj" \
 "./Library/CTS_Layer.obj" \
 "./mujoeDrivers/mujoe_common.obj" \
+"./mujoeDrivers/mujoe_fuelProbeMgr.obj" \
 "./mujoeDrivers/mujoe_i2cRegMap.obj" \
 "./mujoeDrivers/mujoe_i2cSlave.obj" \
 "./mujoeOS/muJoe_i2cTask.obj" \
 "./mujoeOS/muJoe_mainTask.obj" \
 "./mujoeOS/muJoe_taskMgr.obj" \
+"./mujoeOS/mujoe_bspTask.obj" \
 "../lnk_msp430g2553.cmd" \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
@@ -157,7 +159,7 @@ all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 MSPFuelGauge.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: MSP430 Linker'
-	"C:/ti/ccsv7/tools/compiler/ti-cgt-msp430_16.9.6.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --gcc --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"MSPFuelGauge.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccsv7/ccs_base/msp430/include" -i"C:/ti/ccsv7/tools/compiler/ti-cgt-msp430_16.9.6.LTS/lib" -i"C:/ti/ccsv7/tools/compiler/ti-cgt-msp430_16.9.6.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="MSPFuelGauge_linkInfo.xml" --use_hw_mpy=none --rom_model -o "MSPFuelGauge.out" $(ORDERED_OBJS)
+	"C:/ti/ccsv7/tools/compiler/ti-cgt-msp430_16.9.6.LTS/bin/cl430" -vmsp -Ooff --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --gcc --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"MSPFuelGauge.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccsv7/ccs_base/msp430/include" -i"C:/ti/ccsv7/tools/compiler/ti-cgt-msp430_16.9.6.LTS/lib" -i"C:/ti/ccsv7/tools/compiler/ti-cgt-msp430_16.9.6.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="MSPFuelGauge_linkInfo.xml" --use_hw_mpy=none --rom_model -o "MSPFuelGauge.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -170,8 +172,8 @@ MSPFuelGauge.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "Application\main.obj" "Application\structure.obj" "Library\CTS_HAL.obj" "Library\CTS_Layer.obj" "mujoeDrivers\mujoe_common.obj" "mujoeDrivers\mujoe_i2cRegMap.obj" "mujoeDrivers\mujoe_i2cSlave.obj" "mujoeOS\muJoe_i2cTask.obj" "mujoeOS\muJoe_mainTask.obj" "mujoeOS\muJoe_taskMgr.obj" 
-	-$(RM) "Application\main.d" "Application\structure.d" "Library\CTS_HAL.d" "Library\CTS_Layer.d" "mujoeDrivers\mujoe_common.d" "mujoeDrivers\mujoe_i2cRegMap.d" "mujoeDrivers\mujoe_i2cSlave.d" "mujoeOS\muJoe_i2cTask.d" "mujoeOS\muJoe_mainTask.d" "mujoeOS\muJoe_taskMgr.d" 
+	-$(RM) "Application\main.obj" "Application\structure.obj" "Library\CTS_HAL.obj" "Library\CTS_Layer.obj" "mujoeDrivers\mujoe_common.obj" "mujoeDrivers\mujoe_fuelProbeMgr.obj" "mujoeDrivers\mujoe_i2cRegMap.obj" "mujoeDrivers\mujoe_i2cSlave.obj" "mujoeOS\muJoe_i2cTask.obj" "mujoeOS\muJoe_mainTask.obj" "mujoeOS\muJoe_taskMgr.obj" "mujoeOS\mujoe_bspTask.obj" 
+	-$(RM) "Application\main.d" "Application\structure.d" "Library\CTS_HAL.d" "Library\CTS_Layer.d" "mujoeDrivers\mujoe_common.d" "mujoeDrivers\mujoe_fuelProbeMgr.d" "mujoeDrivers\mujoe_i2cRegMap.d" "mujoeDrivers\mujoe_i2cSlave.d" "mujoeOS\muJoe_i2cTask.d" "mujoeOS\muJoe_mainTask.d" "mujoeOS\muJoe_taskMgr.d" "mujoeOS\mujoe_bspTask.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

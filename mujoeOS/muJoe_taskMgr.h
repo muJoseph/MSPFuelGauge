@@ -19,7 +19,14 @@
 // DEFINES
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define TASKMGR_NUM_TASKS                   2
+#define TASKMGR_NUM_TASKS                   3
+
+// Converts time in (ms) to value (dec) to load into CCR0 of TA0 when TA0 is configured as follows:
+// TA0 Clock Source: ACLK
+// ACLK clock source: 32.768 kHz external crystal
+// ACLK clock source  frequency divider: 4
+// Therefore: TA0 tick frequency = 8.192 kHz
+#define TIME_MS_TO_CCR0_COUNT               8.192f
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // TYPEDEFS
@@ -29,12 +36,25 @@ typedef uint16 (*taskEvtProcesssor_t)( uint8 taskId, uint16 events );
 
 typedef struct taskMgr_def
 {
-   uint16       eventsArr[TASKMGR_NUM_TASKS];
+   volatile uint8           currTaskID;
+   volatile uint16          eventsArrBuffered[TASKMGR_NUM_TASKS];
+   volatile uint16          eventsArr[TASKMGR_NUM_TASKS];
 
 }taskMgr_t;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+// MACROS
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTION PROTOS
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+void taskMgr_initTasks( void );
+void taskMgr_runSystem( void );
+uint8 taskMgr_setEvent( uint8 taskId, uint16 events );
+void taskMgr_setEventEx( uint8 taskId, uint16 events, uint32 timeEx_ms );
+uint8 taskMgr_clearEvent( uint8 taskId, uint16 events );
+
 
 #endif /* MUJOE_TASKMGR_H_ */
