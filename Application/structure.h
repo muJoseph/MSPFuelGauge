@@ -51,11 +51,11 @@
 
 /* Public Globals */
 
-// Middle Element on the LaunchPad Capacitive Touch BoosterPack
-extern const struct Element middle_element;
+// Fuel Probe Element
+extern const struct Element fuelprobe_element;
 
-// One Button Sensor
-extern const struct Sensor one_button;    
+// Fuel Probe Sensor
+extern const struct Sensor fuelprobe_sensor;
 
 //****** RAM ALLOCATION ********************************************************
 // TOTAL_NUMBER_OF_ELEMENTS represents the total number of elements used, even if 

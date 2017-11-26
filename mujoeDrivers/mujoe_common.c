@@ -71,10 +71,17 @@ void mujoeCommon_configClocks( sysClkConfig_t sysClkConfig )
         DCOCTL = CALDCO_16MHZ;                    // Set DCO step + modulation*/
     }
 
+    // Set ACLK Source frequency divider
+    BCSCTL1 &= ~ACLK_DIV8;                        // Clear BCSCTL1.DIVAx bit field
+    BCSCTL1 |= sysClkConfig.aclkDivider;          // Set ACLK divider bit field
+
+    // Set SMCLK Source frequency divider
+    BCSCTL2 &= ~SMCLK_DIV8;                       // Clear BCSCTL2.DIVSx bit field
+    BCSCTL2 |= sysClkConfig.smclkDivider;         // Set SMCLK divider bit field
+
     // Enable external XTAL if necessary
     if( sysClkConfig.xtalPop )
     {
-
         BCSCTL3 &= ~LFXT1S_3;                     // Set BCSCTL3.LFXT1Sx = 00b = 32768-Hz crystal on LFXT1 (i.e LFXT1 = XTAL)
         BCSCTL3 &= ~XCAP_3;                       // Clear XCAP tank capacitance bit field
         BCSCTL3 |= sysClkConfig.xtalTankCap;      // Set XCAP tank capacitance bit field

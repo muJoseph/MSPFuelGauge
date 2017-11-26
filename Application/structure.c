@@ -39,13 +39,17 @@
 //******************************************************************************
 
 #include "structure.h"
+#include "mujoe_common.h"
 
-// Middle Element (P2.5)
-const struct Element middle_element = {
+// Fuel Probe Element (P1.2)
+const struct Element fuelprobe_element = {
 
-              .inputPxselRegister = (uint8_t *)&P2SEL,  
-              .inputPxsel2Register = (uint8_t *)&P2SEL2,  
-              .inputBits = BIT5,
+              //.inputPxselRegister = (uint8_t *)&P2SEL,    // DEFAULT
+              //.inputPxsel2Register = (uint8_t *)&P2SEL2,  // DEFAULT
+              //.inputBits = BIT5,
+              .inputPxselRegister = (uint8_t *)&P1SEL,
+              .inputPxsel2Register = (uint8_t *)&P1SEL2,
+              .inputBits = BIT2,
               // When using an abstracted function to measure the element
               // the 100*(maxResponse - threshold) < 0xFFFF
               // ie maxResponse - threshold < 655
@@ -53,15 +57,15 @@ const struct Element middle_element = {
               .threshold = 450
 };
 
-// One Button Sensor
-const struct Sensor one_button =
+// Fuel Probe Sensor
+const struct Sensor fuelprobe_sensor =
                { 
                   .halDefinition = RO_PINOSC_TA0_WDTp,	// Sensing Method
                   .numElements = 1,						// # of Elements
                   .baseOffset = 0,						// First element index = 0
                   // Pointer to elements
-                  .arrayPtr[0] = &middle_element,  		// point to middle element
+                  .arrayPtr[0] = &fuelprobe_element,    // point to fuel probe element
                   // Timer Information
-                  .measGateSource= GATE_WDT_ACLK,     //  0->SMCLK, 1-> ACLK
-                  .accumulationCycles= WDTp_GATE_64   //64 - Default                                                
+                  .measGateSource= GATE_WDT_ACLK,       //  0->SMCLK, 1-> ACLK
+                  .accumulationCycles= WDTp_GATE_64     //64 - Default
                };
