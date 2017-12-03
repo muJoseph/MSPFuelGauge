@@ -48,14 +48,15 @@ const static taskEvtProcesssor_t taskEvtProcesssorArr[TASKMGR_NUM_TASKS] =
      mainTask_evtProcessor,         // TaskId = 2
 }; // taskEvtProcesssorArr
 
-static uint8 timedEvtTaskId = 0;   // TEST
-static uint16 timedEvtFlag = 0;     // TEST
+static volatile uint8 timedEvtTaskId = 0;
+static volatile uint16 timedEvtFlag = 0;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // MACROS
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-//#define taskMgr_setEventISR(X,Y)       if( (X) < TASKMGR_NUM_TASKS ){taskMgr.eventsArrBuffered[(X)] |= (Y);}
+#define taskMgr_enterCriticalSection()              (__disable_interrupt())         // Disable Global interrupts
+#define taskMgr_exitCriticalSection()               (__enable_interrupt())          // Enable Global interrupts
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
@@ -80,7 +81,12 @@ void taskMgr_runSystem( void )
 {
 
   // Copy buffered event flags into current task manager loop iteration
+  // TODO: Validate if masking global interrupts is really necessary. Although this works now,
+  //       asynchronous events (i.e. I2C Master Read/Writes) could potentially cause problems.
+  //       Further testing required...
+  taskMgr_enterCriticalSection();
   taskMgr_updateEventFlags();
+  taskMgr_exitCriticalSection();
 
   // Go thru each task registered with the taskMgr
   for( taskMgr.currTaskID = 0; taskMgr.currTaskID < TASKMGR_NUM_TASKS; taskMgr.currTaskID++ )
@@ -88,7 +94,7 @@ void taskMgr_runSystem( void )
       // Call event processor of respective task if any event flags are set
       if( taskMgr.eventsArr[taskMgr.currTaskID] )
       {
-          taskMgr.eventsArr[taskMgr.currTaskID] = taskEvtProcesssorArr[taskMgr.currTaskID ]( taskMgr.currTaskID, taskMgr.eventsArr[taskMgr.currTaskID] );
+          taskMgr.eventsArr[taskMgr.currTaskID] = taskEvtProcesssorArr[taskMgr.currTaskID]( taskMgr.currTaskID, taskMgr.eventsArr[taskMgr.currTaskID] );
       }
   }
 
@@ -106,25 +112,43 @@ uint8 taskMgr_setEvent( uint8 taskId, uint16 events )
 
 // Configures Timer A to run off ACLK, count in UP mode, places the CPU in LPM3
 // and enables the interrupt vector to jump to ISR upon timeout
-void taskMgr_setEventEx( uint8 taskId, uint16 events, uint32 timeEx_ms )
+uint8 taskMgr_setEventEx( uint8 taskId, uint16 events, uint32 timeEx_ms )
 {
-    // Convert msec interval to CCR0 compare value (dec)
-    float countVal = ( (float)timeEx_ms ) * TIME_MS_TO_CCR0_COUNT;
+    // Check if Timer is currently suspended
+    if( ( TA0CTL & MC_3 ) ==  MC_0 )
+    {
+        // Convert msec interval to CCR0 compare value (dec)
+        float countVal = ( (float)timeEx_ms ) * TIME_MS_TO_CCR0_COUNT;
 
-    timedEvtTaskId = taskId;   // TEST
-    timedEvtFlag = events;     // TEST
+        // TODO: Abstract this further
+        timedEvtTaskId = taskId;
+        timedEvtFlag = events;
 
-    // When ACLK source = 32.768 kHz crystal/4 = 8.192 Hz
-    // Timer A clock source = ACLK
-    // Timer A tick period = 1/(8.192kHz) = ~122 usec
-    TA0CCR0 = (uint16)countVal;
-    TA0CTL = TASSEL_1+MC_1+TACLR;
-    TA0CCTL0 &= ~CCIFG;
-    TA0CCTL0 |= CCIE;
-    __bis_SR_register(LPM3_bits+GIE);
-    __no_operation();
+        // When ACLK source = 32.768 kHz crystal/4 = 8.192 Hz
+        // Timer A clock source = ACLK
+        // Timer A tick period = 1/(8.192kHz) = ~122 usec
+        // Mode: Up
+        TA0CCR0 = (uint16)countVal;
+        TA0CTL = TASSEL_1 + MC_1 + TACLR;
+        TA0CCTL0 &= ~CCIFG;
+        TA0CCTL0 |= CCIE;
+        //__bis_SR_register(LPM3_bits+GIE); // DEFAULT
+        //__no_operation();                 // DEFAULT
+        return SUCCESS;
+    }
+    else
+        return FAILURE;
 
 } // taskMgr_setEventEx
+
+uint8 taskMgr_clearEventEx( uint8 taskId, uint16 events )
+{
+    TA0CTL &= ~MC_3;    // Stop Timer
+    TA0CCR0 = 0;        // Clear Timer compare register
+
+    return taskMgr_clearEvent( taskId, events );
+
+} // taskMgr_clearEventEx
 
 uint8 taskMgr_clearEvent( uint8 taskId, uint16 events )
 {
@@ -132,6 +156,8 @@ uint8 taskMgr_clearEvent( uint8 taskId, uint16 events )
         return FAILURE;
 
     taskMgr.eventsArr[taskId] &= ~events;
+    taskMgr.eventsArrBuffered[taskId] &= ~events;   // TEST: Clear the buffered events flags as well
+
     return SUCCESS;
 
 } // taskMgr_clearEvent
@@ -165,8 +191,9 @@ static void taskMgr_updateEventFlags( void )
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void ISR_Timer0_A0(void)
 {
-  taskMgr_setEventISR(timedEvtTaskId,timedEvtFlag); // TEST
-  TA0CTL &= ~(MC_1);
-  TA0CCTL0 &= ~(CCIE);
-  __bic_SR_register_on_exit(LPM3_bits+GIE);
+  taskMgr_setEventISR( timedEvtTaskId, timedEvtFlag );
+  //TA0CTL &= ~(MC_1);  // DEFAULT
+  TA0CTL &= ~(MC_3);    // TEST
+  TA0CCTL0 &= ~(CCIE);    // DEFAULT
+  //__bic_SR_register_on_exit(LPM3_bits+GIE); // DEFAULT
 }

@@ -31,6 +31,7 @@
 // FUNCTION PROTOS
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+uint8 mainTask_getTaskId( void );
 void mainTask_init( uint8 taskId );
 uint16 mainTask_evtProcessor( uint8 taskId, uint16 events );
 

@@ -19,15 +19,12 @@
 
 static void i2cSlave_prepReceive( void );
 static void i2cSlave_parseRxdPacket( void );
+static void i2cSlave_handleI2cCommand( uint8 i2cCmd );
 static void i2cSlave_pauseUSCI( void );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // EXTERN VAR
 ////////////////////////////////////////////////////////////////////////////////////////////////
-
-// Variables used to notify app of state of USCI peripheral and therefore the I2C bus master
-//volatile bool i2cPktRxd = FALSE;
-//volatile bool i2cMstrReading = FALSE;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // LOCAL VAR
@@ -51,9 +48,6 @@ static i2cSlaveIsr_t   i2cSlaveIsr =
     .rxByteCnt = 0,
     .txBuffIndex = 0,
 };
-
-// Debug Var
-//static volatile debugVarFlag = 0x00;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // MACROS
@@ -188,27 +182,13 @@ static void i2cSlave_parseRxdPacket( void )
 {
     uint8 numRxBytes = i2cSlaveIsr.rxByteCnt;
 
-    // Command or Setting of Address Pointer
+    // I2C Command RX'd
     if( numRxBytes == 1 )
     {
-        uint8 rxByte = i2cSlaveIsr.pRxBuff[0];
-
-        // MSPFuelGauge Command RX'd
-        if( rxByte & 0x80 )
-        {
-
-        }
-        // MSPFuelGauge Register address RX'd (i.e. Set address pointer)
-        /*// BEGIN DEFAULT
-        else
-        {
-           // Set TX buffer address to the RX'd register address so that next I2C master read
-           // will begin reading from the specified register within the register map
-           if( rxByte < MSPFG_NUM_REGISTERS )
-               i2cSlaveIsr.txBuffIndex = rxByte;
-        }
-        // END DEFAULT
-        */
+        uint8 rxdI2cCmd = i2cSlaveIsr.pRxBuff[0];
+        // Ensure that MSBit is set to signify I2C command
+        if( rxdI2cCmd & 0x80 )
+          i2cSlave_handleI2cCommand( rxdI2cCmd );
     }
     // Register(s) write
     else if( numRxBytes >= 2 )
@@ -225,6 +205,27 @@ static void i2cSlave_parseRxdPacket( void )
     }
 
 } //i2cSlave_parseRxdPacket
+
+static void i2cSlave_handleI2cCommand( uint8 i2cCmd )
+{
+    switch( i2cCmd )
+    {
+        case MSPFG_CMD_ST_CONT_DATA:
+            taskMgr_setEvent( mainTask_getTaskId(), MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
+            break;
+        case MSPFG_CMD_SP_CONT_DATA:
+            taskMgr_clearEventEx( mainTask_getTaskId(), MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
+            break;
+        case MSPFG_CMD_SINGLESHOT_DATA:
+            break;
+        case MSPFG_CMD_SLEEP:
+            break;
+        // Invalid Command
+        default:
+            break;
+    }
+
+} // i2cSlave_handleI2cCommand
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // INTERRUPT SERVICE ROUTINES

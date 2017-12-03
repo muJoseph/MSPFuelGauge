@@ -28,12 +28,21 @@ static void mainTask_getFuelProbeMeasurement( void );
 
 static uint8    mainTask_taskId = 0;
 
-
-static uint16 fuelProbeCnt = 0; // DEBUG
+// BEGIN DEBUG
+static uint16 fuelProbeCnt = 0;
+static uint8  fuelProbeSampleCnt = 0;
+static bool   takeCapSenseSample = TRUE;
+// END DEBUG
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+uint8 mainTask_getTaskId( void )
+{
+    return mainTask_taskId;
+
+} // mainTask_getTaskId
 
 void mainTask_init( uint8 taskId )
 {
@@ -66,8 +75,18 @@ uint16 mainTask_evtProcessor( uint8 taskId, uint16 events )
 
 static void mainTask_getFuelProbeMeasurement( void )
 {
-    fuelProbeCnt = fuelProbeMgr_performMeasurement();
-    putBreakPtHere();
-    taskMgr_setEventEx( mainTask_taskId, MAINTASK_GET_FUEL_PROBE_MEAS_EVT, 1000 );
+    if( takeCapSenseSample )
+    {
+        fuelProbeCnt = fuelProbeMgr_performMeasurement();
+        fuelProbeSampleCnt++;
+        putBreakPtHere();
+    }
+    if( taskMgr_setEventEx( mainTask_taskId, MAINTASK_GET_FUEL_PROBE_MEAS_EVT, 1000 ) != SUCCESS )
+    {
+        taskMgr_setEvent( mainTask_taskId, MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
+        takeCapSenseSample = FALSE;
+    }
+    else
+        takeCapSenseSample = TRUE;
 
 } // mainTask_getFuelProbeMeasurement

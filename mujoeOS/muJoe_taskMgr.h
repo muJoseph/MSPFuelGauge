@@ -60,7 +60,8 @@ extern taskMgr_t            taskMgr;
 void taskMgr_initTasks( void );
 void taskMgr_runSystem( void );
 uint8 taskMgr_setEvent( uint8 taskId, uint16 events );
-void taskMgr_setEventEx( uint8 taskId, uint16 events, uint32 timeEx_ms );
+uint8 taskMgr_setEventEx( uint8 taskId, uint16 events, uint32 timeEx_ms );
+uint8 taskMgr_clearEventEx( uint8 taskId, uint16 events );
 uint8 taskMgr_clearEvent( uint8 taskId, uint16 events );
 
 
