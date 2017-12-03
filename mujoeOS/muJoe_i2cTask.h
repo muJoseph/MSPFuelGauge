@@ -21,7 +21,6 @@
 
 // I2C Task Event Flags
 #define  I2CTASK_HANDLE_MASTER_WRITE_EVT                    0x0001
-#define  I2CTASK_HANDLE_MASTER_READ_EVT                     0x0002
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // TYPEDEFS

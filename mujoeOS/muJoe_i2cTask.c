@@ -34,9 +34,6 @@ uint8 i2cTask_taskId = 0;
 // LOCAL VAR
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-static uint8    debugVar1 = 0;
-static uint8    debugVar2 = 0;
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -51,14 +48,6 @@ void i2cTask_init( uint8 taskId )
 
 uint16 i2cTask_evtProcessor( uint8 taskId, uint16 events )
 {
-    // I2C Master Read Event
-    if( events & I2CTASK_HANDLE_MASTER_READ_EVT )
-    {
-        i2cTask_masterReadHandler();
-        debugVar2++;
-        return (events ^ I2CTASK_HANDLE_MASTER_READ_EVT);
-    }
-
     // I2C Master Write Event
     if( events & I2CTASK_HANDLE_MASTER_WRITE_EVT )
     {
@@ -98,7 +87,6 @@ void mspfg_configRegWriteCb( uint8 regData )
 {
     if( regData & MSPFG_CFG_EN_HW_INT )
     {
-        debugVar1++;
         putBreakPtHere();
     }
     else

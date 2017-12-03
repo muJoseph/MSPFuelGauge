@@ -52,6 +52,9 @@ static i2cSlaveIsr_t   i2cSlaveIsr =
     .txBuffIndex = 0,
 };
 
+// Debug Var
+//static volatile debugVarFlag = 0x00;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // MACROS
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -157,14 +160,24 @@ bool i2cSlave_initHardware( void )
 // STATIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+static void i2cSlave_pauseUSCI( void )
+{
+    // Hold USCI peripheral in reset state:
+    //- I2C communication stops
+    //- SDA and SCL are high impedance
+    //- UCBxI2CSTAT, bits 6-0 are cleared
+    //- UCBxTXIE and UCBxRXIE are cleared
+    //- UCBxTXIFG and UCBxRXIFG are cleared
+    usciReset();
+
+} //i2cSlave_pauseUSCI
+
 // Prepare to receive data from master
 static void i2cSlave_prepReceive( void )
 {
     // Rst indices and RX/TX byte counts
     i2cSlaveIsr.rxBuffIndex = 0;
     i2cSlaveIsr.rxByteCnt = 0;
-    //i2cSlaveIsr.rx = TRUE;  // DEFAULT, consider commenting out
-    //i2cPktRxd = FALSE;
 
     // Enable RX interrupt
     enableI2cRxInterrupt();
@@ -186,6 +199,7 @@ static void i2cSlave_parseRxdPacket( void )
 
         }
         // MSPFuelGauge Register address RX'd (i.e. Set address pointer)
+        /*// BEGIN DEFAULT
         else
         {
            // Set TX buffer address to the RX'd register address so that next I2C master read
@@ -193,6 +207,8 @@ static void i2cSlave_parseRxdPacket( void )
            if( rxByte < MSPFG_NUM_REGISTERS )
                i2cSlaveIsr.txBuffIndex = rxByte;
         }
+        // END DEFAULT
+        */
     }
     // Register(s) write
     else if( numRxBytes >= 2 )
@@ -209,18 +225,6 @@ static void i2cSlave_parseRxdPacket( void )
     }
 
 } //i2cSlave_parseRxdPacket
-
-static void i2cSlave_pauseUSCI( void )
-{
-    // Hold USCI peripheral in reset state:
-    //- I2C communication stops
-    //- SDA and SCL are high impedance
-    //- UCBxI2CSTAT, bits 6-0 are cleared
-    //- UCBxTXIE and UCBxRXIE are cleared
-    //- UCBxTXIFG and UCBxRXIFG are cleared
-    usciReset();
-
-} //i2cSlave_pauseUSCI
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // INTERRUPT SERVICE ROUTINES
@@ -296,9 +300,14 @@ void __attribute__ ((interrupt(USCIAB0RX_VECTOR))) USCIAB0RX_ISR (void)
      // I2C Master has set R/Wn slave addr bit (Master is reading, slave transmitting)
      if( UCB0CTL1 & UCTR )
      {
+       // Clear RX flag
        i2cSlaveIsr.rx = FALSE;
-       // Notify app to prepare first byte to send to master
-       taskMgr_setEventISR( i2cTask_taskId, I2CTASK_HANDLE_MASTER_READ_EVT );
+
+       // Load first byte to by transmitted into TX buffer
+       UCB0TXBUF = mspfgRegMap[i2cSlaveIsr.txBuffIndex++];
+       // If at end of the I2C register map, wrap around
+       if( i2cSlaveIsr.txBuffIndex == MSPFG_NUM_REGISTERS ){ i2cSlaveIsr.txBuffIndex = 0; }
+
      }
      // I2C Master has cleared R/Wn slave addr bit (Master is writing, slave receiving)
      else
@@ -310,9 +319,23 @@ void __attribute__ ((interrupt(USCIAB0RX_VECTOR))) USCIAB0RX_ISR (void)
   // I2C STOP Condition RX'd
   if( UCB0STAT & UCSTPIFG )
   {
-     // Notify app if I2C packet was RX'd
-     if( i2cSlaveIsr.rx && i2cSlaveIsr.rxByteCnt )
-        taskMgr_setEventISR(i2cTask_taskId,I2CTASK_HANDLE_MASTER_WRITE_EVT);
+     // If USCI is in Slave Receiver Mode...
+     //if( i2cSlaveIsr.rx && i2cSlaveIsr.rxByteCnt ) // DEFAULT
+     if( i2cSlaveIsr.rx  )  // TEST
+     {
+         // Check if I2C Master sent only one byte and if it is a valid register address
+         if( (i2cSlaveIsr.rxByteCnt == 1) && (i2cSlaveIsr.pRxBuff[0] < MSPFG_NUM_REGISTERS) )
+         {
+             // Load RX'd register address into TX index buffer in preparation of I2C Master Read
+             i2cSlaveIsr.txBuffIndex = i2cSlaveIsr.pRxBuff[0];
+             // Reset indices and RX/TX byte counts in preparation for subsequent I2C writes
+             i2cSlaveIsr.rxBuffIndex = 0;
+             i2cSlaveIsr.rxByteCnt = 0;
+         }
+         // Something other than register address was sent by I2C master, parse RX'd packet within main app
+         else
+            taskMgr_setEventISR( i2cTask_taskId, I2CTASK_HANDLE_MASTER_WRITE_EVT );
+     }
 
      UCB0STAT &= ~UCSTPIFG;
   }

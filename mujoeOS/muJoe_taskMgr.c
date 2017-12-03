@@ -142,11 +142,18 @@ uint8 taskMgr_clearEvent( uint8 taskId, uint16 events )
 
 static void taskMgr_updateEventFlags( void )
 {
-    uint8 len = sizeof( taskMgr.eventsArr );
-    // Copy buffered event flags into current taskMgr loop iteration context
-    memcpy( taskMgr.eventsArr, taskMgr.eventsArrBuffered, len );
-    // Clear buffered event flags
-    memset( taskMgr.eventsArrBuffered, 0, len );
+    uint8 i;
+    for(i = 0; i < TASKMGR_NUM_TASKS; i++ )
+    {
+        // OR in event flags from last OS loop iteration into current loop iteration.
+        // NOTE: Current loop iteration will contain unserviced event flags from last OS
+        //       loop iteration. Therefore, higher priority events (i.e. if() statements
+        //       that are higher sequentially within the event processor for that task)
+        //       will always be serviced before lower priority events within the same task.
+        taskMgr.eventsArr[i] |= taskMgr.eventsArrBuffered[i];
+        // Clear the buffered event flags in preparation of current cycle.
+        taskMgr.eventsArrBuffered[i] = 0;
+    }
 
 } // taskMgr_updateEventFlags
 
