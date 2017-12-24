@@ -78,13 +78,26 @@ static void i2cTask_masterWriteHandler( void )
 // I2C bus master
 void mspfg_configRegWriteCb( uint8 regData )
 {
+    // Enable/disable HW interrupt generation via MSP_INTn pin
     if( regData & MSPFG_CFG_EN_HW_INT )
     {
-        putBreakPtHere();
+        // Disable internal PU/PD resistor
+        P2REN &= ~P2_3_MSP_INTn;
+        // Configure MSP_INTn as OUTPUT
+        P2DIR |= P2_3_MSP_INTn;
+        // Init GPIO as HIGH
+        P2OUT |= P2_3_MSP_INTn;
+
+        putBreakPtHere();               // Debug
     }
     else
     {
-
+        // Configure MSP_INTn as INPUT
+        P2DIR &= ~P2_3_MSP_INTn;
+        // Enable internal PU/PD resistor
+        P2REN |= P2_3_MSP_INTn;
+        // Set internal resistor to pull-up
+        P2OUT |= P2_3_MSP_INTn;
     }
 
 } // mspfg_configRegWriteCb
@@ -93,5 +106,18 @@ void mspfg_configRegWriteCb( uint8 regData )
 // is written to by I2C bus master
 void mspfg_fuelLvlCritThreshRegWriteCb( uint8 regData )
 {
-    putBreakPtHere();
+    putBreakPtHere();                   // Debug
+
 } // mspfg_fuelLvlCritThreshRegWriteCb
+
+// Called when Status I2C register
+// is written to by I2C bus master
+void mspfg_statusRegWriteCb( uint8 regData )
+{
+    // If I2C Bus Master has cleared HW interrupt flag, de-assert HW line
+    if( ( regData & MSPFG_STAT_HW_INT_PENDING ) == 0x00 )
+        MSPINTn_bringHIGH();
+
+    putBreakPtHere();                   // Debug
+
+}// mspfg_statusRegWriteCb

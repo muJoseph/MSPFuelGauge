@@ -23,11 +23,20 @@
 // TYPEDEFS
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+typedef struct fuelProbeMgr_def
+{
+    uint16_t    countDelta;             // Delta count. This is the TI capTouch algorithm output. As capacitance -> inf, countRaw -> full-scale. As capacitance -> 0, countRaw -> 0
+    uint16_t    countRaw;               // Raw timer count (0 to (2^16) - 1). As capacitance -> inf, countRaw -> 0. As capacitance -> 0, countRaw -> full-scale
+    bool        rawOverFlow;            // If TRUE, countRaw has overflowed (will latch to full-scale)
+
+}fuelProbeMgr_t;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTION PROTOS
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 void fuelProbeMgr_initProbe( void );
-uint16 fuelProbeMgr_performMeasurement( void );
+//uint16 fuelProbeMgr_performMeasurement( void );
+fuelProbeMgr_t fuelProbeMgr_performMeasurement( void );
 
 #endif /* MUJOEDRIVERS_MUJOE_FUELPROBEMGR_H_ */

@@ -107,6 +107,16 @@ static void configureClocks( void )
 
 static void configureGPIO( void )
 {
+    // Configure MSP_INTn pin as GPIO
+    P2SEL &= ~P2_3_MSP_INTn;
+    P2SEL2 &= ~P2_3_MSP_INTn;
+
+    // Configure MSP_INTn as INPUT
+    P2DIR &= ~P2_3_MSP_INTn;
+    // Enable internal PU/PD resistor for MSP_INTn
+    P2REN |= P2_3_MSP_INTn;
+    // Set internal resistor to pull-up for MSP_INTn
+    P2OUT |= P2_3_MSP_INTn;
 
 } // configureGPIO
 

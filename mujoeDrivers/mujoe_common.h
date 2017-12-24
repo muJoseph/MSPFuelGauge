@@ -85,10 +85,14 @@ typedef struct sysClkConfig_def
 // MACROS
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define stopWDT()               (WDTCTL = WDTPW + WDTHOLD)
+#define stopWDT()                   (WDTCTL = WDTPW + WDTHOLD)
 
 // Use as a dummy line of code to put break points on
-#define putBreakPtHere()        (__no_operation())
+#define putBreakPtHere()            (__no_operation())
+
+// MSP_INTn OUTPUT control
+#define MSPINTn_bringLOW()          (P2OUT &=~P2_3_MSP_INTn)
+#define MSPINTn_bringHIGH()         (P2OUT |=P2_3_MSP_INTn)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTION PROTOS

@@ -15,6 +15,7 @@
 #include "mujoe_common.h"
 #include "mujoe_taskMgr.h"
 #include "mujoe_fuelProbeMgr.h"
+#include "mujoe_i2cSlave.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // DEFINES

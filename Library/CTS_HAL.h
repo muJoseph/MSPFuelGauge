@@ -89,6 +89,7 @@
 #define CTS_HAL_H_
 
 #include "structure.h"
+#include "mujoe_types.h"
 
 void TI_CTS_RO_CSIO_TA0_TA1_HAL(const struct Sensor *,uint16_t *);
 
@@ -125,6 +126,8 @@ void TI_CTS_fRO_COMPAp_TA1_SW_HAL(const struct Sensor *, uint16_t *);
 void TI_CTS_RC_PAIR_TA0_HAL(const struct Sensor *, uint16_t *);
 
 void TI_CTS_RO_PINOSC_TA0_WDTp_HAL(const struct Sensor *, uint16_t *);
+
+void TI_CTS_RO_PINOSC_TA0_WDTp_HAL_ALT( const struct Sensor *, uint16_t *, bool * );
 
 void TI_CTS_RO_PINOSC_TA0_HAL(const struct Sensor *, uint16_t *);
 

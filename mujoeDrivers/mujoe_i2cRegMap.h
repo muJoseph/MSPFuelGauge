@@ -28,14 +28,18 @@
 // Configuration Register Bit Map
 #define MSPFG_CFG_EN_HW_INT                     0x01        // If set, enables generation of HW interrupt
 
+// Status Register Bit Map
+#define MSPFG_STAT_CAPOVRFLW                    0x01        // If set, raw capacitance count has overflowed during accumulation window. Updated with each capacitance measurement
+#define MSPFG_STAT_HW_INT_PENDING               0x08        // If set, HW interrupt is asserted. Must be cleared by host to de-assert HW interrupt  line.
+
 // MSPFuelGauge I2C Commands
-#define MSPFG_CMD_ST_CONT_DATA          0x81    // Start Continuous Data collection
-#define MSPFG_CMD_SP_CONT_DATA          0x82    // Stop Continuous Data collection
-#define MSPFG_CMD_SINGLESHOT_DATA       0x83    // Trigger a single shot measurement
-#define MSPFG_CMD_SLEEP                 0x84    // Put MSPFuelGauge to sleep
+#define MSPFG_CMD_ST_CONT_DATA                  0x81        // Start Continuous Data collection
+#define MSPFG_CMD_SP_CONT_DATA                  0x82        // Stop Continuous Data collection
+#define MSPFG_CMD_SINGLESHOT_DATA               0x83        // Trigger a single shot measurement
+#define MSPFG_CMD_SLEEP                         0x84        // Put MSPFuelGauge to sleep
 
 // Number of I2C registers with write access privileges
-#define MSPFG_NUM_REG_WRITE_ACCESS              2
+#define MSPFG_NUM_REG_WRITE_ACCESS              3
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // TYPEDEFS
@@ -47,14 +51,15 @@ typedef enum
   MSPFG_WHO_AM_I                = 0x00, // Who Am I Register (R)
   MSPFG_DEV_INFO,                       // Device Info Register (R)
   MSPFG_CFG,                            // Configuration Register (R/W)
-  MSPFG_CAP_FULL_LSB,                   // Capacitance value when tank full LSByte (R)
-  MSPFG_CAP_FULL_MSB,                   // Capacitance value when tank full MSByte (R)
+  MSPFG_STATUS,                         // Status Register (R/W)
   MSPFG_CAP_ALGO_LSB,                   // Tracking Algo Capacitance Reading LSByte (R)
   MSPFG_CAP_ALGO_MSB,                   // Tracking Algo Capacitance Reading MSByte (R)
   MSPFG_CAP_RAW_LSB,                    // Raw Capacitance Reading LSByte (R)
   MSPFG_CAP_RAW_MSB,                    // Raw Capacitance Reading MSByte (R)
-  MSPFG_FUEL_LVL_CRIT_THRESH,           // Critical Fuel Level Threshold (0 to 100%) (R/W)
   MSPFG_FUEL_LVL,                       // Current Fuel Level (0 to 100%) (R)
+  MSPFG_CAP_FULL_LSB,                   // Capacitance value when tank full LSByte (R/W)
+  MSPFG_CAP_FULL_MSB,                   // Capacitance value when tank full MSByte (R/W)
+  MSPFG_FUEL_LVL_CRIT_THRESH,           // Critical Fuel Level Threshold (0 to 100%) (R/W)
   MSPFG_NUM_REGISTERS,                  // Number of MSPFuelGauge Registers
 
 }mspfg_regAddr_t;

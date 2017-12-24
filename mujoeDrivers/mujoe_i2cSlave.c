@@ -33,8 +33,9 @@ static void i2cSlave_pauseUSCI( void );
 // Non-volatile variables accessed locally by i2cSlave driver fncs
 static i2cSlave_t i2cSlave =
 {
-     .myI2cSlaveAddr = 0,
-     .cfg = 0x00,
+     .myI2cSlaveAddr        = 0,
+     .cfg                   = 0x00,
+     .contDataCollection    = FALSE,
 };
 
 // Volatile Variables accessed by USCI TX/RX ISRs
@@ -42,11 +43,12 @@ static volatile uint8 rxBuffer[RX_BUFFER_SIZE] = {0};
 
 static i2cSlaveIsr_t   i2cSlaveIsr =
 {
-    .rx = TRUE,
-    .pRxBuff = rxBuffer,
-    .rxBuffIndex = 0,
-    .rxByteCnt = 0,
-    .txBuffIndex = 0,
+    .busActive              = FALSE,
+    .rx                     = TRUE,
+    .pRxBuff                = rxBuffer,
+    .rxBuffIndex            = 0,
+    .rxByteCnt              = 0,
+    .txBuffIndex            = 0,
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -73,6 +75,45 @@ static i2cSlaveIsr_t   i2cSlaveIsr =
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Returns TRUE if MSP Fuel Gauge is currently configured for
+// continuous data collection (i.e. MSPFG_CMD_ST_CONT_DATA I2C cmd sent by
+// I2C bus master ). FALSE otherwise
+bool i2cSlave_contDataCollect( void )
+{
+   return i2cSlave.contDataCollection;
+
+} // i2cSlave_contDataCollect
+
+// Returns TRUE if USCI peripheral TX interrupts were successfully enabled
+// Returns FALSE otherwise
+bool i2cSlave_resumeI2cMasterReads( void )
+{
+    // Make sure that I2C Bus is idle before enabling TX interrupts
+    if( !i2cSlaveIsr.busActive )
+    {
+        enableI2cTxInterrupt();
+        return TRUE;
+    }
+    else
+        return FALSE;
+
+} // i2cSlave_resumeI2cMasterReads
+
+// Returns TRUE if USCI peripheral TX interrupts were successfully disabled
+// Returns FALSE otherwise
+bool i2cSlave_suspendI2cMasterReads( void )
+{
+    // Make sure that I2C Bus is idle before disabling TX interrupts
+    if( !i2cSlaveIsr.busActive )
+    {
+        disableI2cTxInterrupt();
+        return TRUE;
+    }
+    else
+        return FALSE;
+
+} // i2cSlave_suspendI2cMasterReads
 
 void i2cSlave_rxdPacketHandler( void )
 {
@@ -211,12 +252,19 @@ static void i2cSlave_handleI2cCommand( uint8 i2cCmd )
     switch( i2cCmd )
     {
         case MSPFG_CMD_ST_CONT_DATA:
+            i2cSlave.contDataCollection = TRUE;
             taskMgr_setEvent( mainTask_getTaskId(), MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
             break;
         case MSPFG_CMD_SP_CONT_DATA:
-            taskMgr_clearEventEx( mainTask_getTaskId(), MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
+            if( i2cSlave.contDataCollection )
+            {
+                i2cSlave.contDataCollection = FALSE;
+                taskMgr_clearEventEx( mainTask_getTaskId(), MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
+            }
             break;
         case MSPFG_CMD_SINGLESHOT_DATA:
+            i2cSlave.contDataCollection = FALSE;
+            taskMgr_setEvent( mainTask_getTaskId(), MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
             break;
         case MSPFG_CMD_SLEEP:
             break;
@@ -314,6 +362,8 @@ void __attribute__ ((interrupt(USCIAB0RX_VECTOR))) USCIAB0RX_ISR (void)
      else
        i2cSlaveIsr.rx = TRUE;
 
+     i2cSlaveIsr.busActive = TRUE;      // Set USCI active flag (TEST)
+
      UCB0STAT &= ~UCSTTIFG;
   }
 
@@ -337,6 +387,8 @@ void __attribute__ ((interrupt(USCIAB0RX_VECTOR))) USCIAB0RX_ISR (void)
          else
             taskMgr_setEventISR( i2cTask_taskId, I2CTASK_HANDLE_MASTER_WRITE_EVT );
      }
+
+     i2cSlaveIsr.busActive = FALSE;      // Clear USCI active flag (TEST)
 
      UCB0STAT &= ~UCSTPIFG;
   }

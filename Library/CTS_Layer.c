@@ -64,6 +64,8 @@
 
 #include "CTS_Layer.h"
 
+#include "mujoe_types.h"
+
 /*! @defgroup GLOBAL_VARS Global Variables
  *  @{ 
  */
@@ -324,7 +326,27 @@ void TI_CAPT_Raw(const struct Sensor* groupOfElements, uint16_t * counts)
     	TI_CTS_fRO_PINOSC_TA1_TB0_HAL(groupOfElements, counts);
     }
 #endif
-}
+
+} // TI_CAPT_Raw
+
+void TI_CAPT_Raw_ALT(const struct Sensor* groupOfElements, uint16_t * counts, bool *pOverFlow )
+{
+
+#if defined fRO_PINOSC_TA0_SW
+    if(groupOfElements->halDefinition == fRO_PINOSC_TA0_SW)
+    {
+        TI_CTS_fRO_PINOSC_TA0_SW_HAL_ALT(groupOfElements, counts, p_cntOvflow);
+    }
+
+#elif defined RO_PINOSC_TA0_WDTp
+    if(groupOfElements->halDefinition == RO_PINOSC_TA0_WDTp)
+    {
+        //TI_CTS_RO_PINOSC_TA0_WDTp_HAL(groupOfElements, counts); // DEFAULT
+        TI_CTS_RO_PINOSC_TA0_WDTp_HAL_ALT(groupOfElements, counts, pOverFlow );    // CUSTOM
+    }
+#endif // #if defined fRO_PINOSC_TA0_SW
+
+} // TI_CAPT_Raw_ALT
 
 #ifdef TOTAL_NUMBER_OF_ELEMENTS
 /***************************************************************************//**
@@ -640,6 +662,252 @@ void TI_CAPT_Custom(const struct Sensor* groupOfElements, uint16_t * deltaCnt)
       ctsStatusReg &= ~PAST_EVNT;
     }
 }
+
+/***************************************************************************//**
+ * @fn      TI_CAPT_Custom_ALT
+ * @brief   Measure the change in capacitance of the Sensor
+ *
+ *          This function measures the change in capacitance of each element
+ *          within a sensor and updates the baseline tracking in the event that
+ *          no change exceeds the detection threshold.
+ *          The order of the elements within the Sensor structure is arbitrary
+ *          but must be consistent between the application and configuration.
+ *          The first element in the array (deltaCnt) corresponds to the first
+ *          element within the Sensor structure.
+ * @param   groupOfElements Pointer to Sensor structure to be measured
+ * @param   deltaCnt Address to where the measurements are to be written
+ * @param   pOverFlow Pointer to count overflow flag. If TRUE, timer raw Count (rawCnt) has overflowed. FALSE otherwise.
+ * @param   rawCnt Pointer to where the raw timer count are to be written
+ * @return  none
+ ******************************************************************************/
+void TI_CAPT_Custom_ALT(const struct Sensor* groupOfElements, uint16_t * deltaCnt, bool *pOverFlow, uint16_t *rawCnt )
+{
+    uint8_t j;
+    uint16_t tempCnt, remainder;
+    ctsStatusReg &= ~ EVNT;
+
+    TI_CAPT_Raw_ALT(groupOfElements, &deltaCnt[0], pOverFlow ); // measure group of sensors
+
+    // Cap Overflow Management Begin
+    if( *pOverFlow )
+    {
+        deltaCnt[0] = 65535;
+    }
+    // Cap Overflow Management End
+    *rawCnt = deltaCnt[0];
+
+    for (j = 0; j < (groupOfElements->numElements); j++)
+    {
+        tempCnt = deltaCnt[j];
+        if(deltaCnt[j])
+        {
+        if(((ctsStatusReg & DOI_MASK)
+                && (groupOfElements->halDefinition & RO_MASK))
+            ||
+         ((!(ctsStatusReg & DOI_MASK))
+                && (!(groupOfElements->halDefinition & RO_MASK))))
+        {
+            /*
+             * Interested in a decrease in counts. Either the decrease
+             * represents an increase in capacitance (a touch) with the
+             * RO method, or the decrease represents a decrease in capacitance
+             * (release) with the fRO or RC methods.
+             */
+            if(baseCnt[j+groupOfElements->baseOffset] < deltaCnt[j])
+            {
+                /*
+                 * The measured value is greater than the baseline therefore
+                 * no detection logic is needed.  The measured value is
+                 * preserved in tempCnt and is used for baseline updates.
+                 */
+                deltaCnt[j] = 0;
+                if(((groupOfElements->arrayPtr[j])->threshold)
+                &&
+                (baseCnt[j+groupOfElements->baseOffset]
+                    +((groupOfElements->arrayPtr[j])->threshold/2) < tempCnt))
+                {
+                    /*
+                     * When the threshold is valid (non-calibration state),
+                     * limit the measurement to the baseline + threshold/2.
+                     */
+                    tempCnt = baseCnt[j+groupOfElements->baseOffset]
+                                +((groupOfElements->arrayPtr[j])->threshold)/2;
+                }
+            }
+            else
+            {
+                /*
+                 * deltaCnt now represents the magnitude of change relative to
+                 * the baseline.
+                 */
+                deltaCnt[j] = baseCnt[j+groupOfElements->baseOffset]
+                                  - deltaCnt[j];
+            }
+        }
+        if(((!(ctsStatusReg & DOI_MASK))
+                && (groupOfElements->halDefinition & RO_MASK))
+           ||
+             ((ctsStatusReg & DOI_MASK)
+                && (!(groupOfElements->halDefinition & RO_MASK))))
+        {
+            /*
+             * Interested in an increase in counts. Either the increase
+             * represents a decrease in capacitance (a release) with the
+             * RO method, or the increase represents a increase in capacitance
+             * (touch) with the fRO or RC methods.
+             */
+            if(baseCnt[j+groupOfElements->baseOffset] > deltaCnt[j])
+            {
+                /*
+                 * The measured value is less than the baseline therefore
+                 * no detection logic is needed.  The measured value is
+                 * preserved in tempCnt and is used for baseline updates.
+                 */
+                deltaCnt[j] = 0;
+                if(((groupOfElements->arrayPtr[j])->threshold)
+                &&
+                (baseCnt[j+groupOfElements->baseOffset]
+                     -((groupOfElements->arrayPtr[j])->threshold/2) > tempCnt))
+                {
+                    /*
+                     * When the threshold is valid (non-calibration state),
+                     * limit the measurement to the baseline - threshold/2.
+                     */
+                    tempCnt = baseCnt[j+groupOfElements->baseOffset]
+                                -((groupOfElements->arrayPtr[j])->threshold)/2;
+                }
+            }
+            else
+            {
+                /*
+                 * deltaCnt now represents the magnitude of change relative to
+                 * the baseline.
+                 */
+                deltaCnt[j] = deltaCnt[j]
+                              - baseCnt[j+groupOfElements->baseOffset];
+            }
+        }
+
+        // This section updates the baseline capacitance************************
+        if (deltaCnt[j]==0)
+        { // if delta counts is 0, then the change in capacitance was opposite
+          // the direction of interest.  The baseCnt[i] is updated with the
+          // saved tempCnt value for the current index value 'i'.
+            remainder = 0;
+            switch ((ctsStatusReg & TRADOI_VSLOW))
+            {
+            case TRADOI_FAST://Fast
+                    tempCnt = tempCnt/2;
+                    baseCnt[j+groupOfElements->baseOffset]
+                    = (baseCnt[j+groupOfElements->baseOffset]/2);
+                    break;
+            case TRADOI_MED://Medium
+                    tempCnt = tempCnt/4;
+                    baseCnt[j+groupOfElements->baseOffset]
+                    = 3*(baseCnt[j+groupOfElements->baseOffset]/4);
+                    break;
+            case TRADOI_SLOW://slow
+                  /* Calculate remainder associated with (x + 63*y)/64 */
+                  remainder = 0x003F & baseCnt[j+groupOfElements->baseOffset];
+                  remainder = remainder * 63;
+                  remainder += 0x003F & tempCnt;
+                  remainder = remainder >> 6;
+                  tempCnt = tempCnt/64;
+                  baseCnt[j+groupOfElements->baseOffset]
+                  = 63*(baseCnt[j+groupOfElements->baseOffset]/64);
+                    break;
+            case TRADOI_VSLOW://very slow
+                /* Calculate remainder associated with (x+127*y)/128 */
+                remainder = 0x007F & baseCnt[j+groupOfElements->baseOffset];
+                remainder = remainder * 127;
+                remainder += 0x007F & tempCnt;
+                remainder = remainder >> 7;
+                tempCnt = tempCnt/128;
+                baseCnt[j+groupOfElements->baseOffset]
+                = 127*(baseCnt[j+groupOfElements->baseOffset]/128);
+            break;
+            }
+            /* Base_Capacitance = (Measured_Capacitance/Z)
+                                + Y*(Base_Capacitance/Z) */
+            tempCnt += remainder;
+            baseCnt[j+groupOfElements->baseOffset] += tempCnt;
+            /* In the case that DOI is set and */
+            if(groupOfElements->halDefinition & RO_MASK)
+            {
+                /*  If the RO_MASK is set then the direction of interest is
+                 *  decreasing (counts decrease with capacitance) and therefore
+                 *  movement against the direction of interest would be an
+                 *  increase: increment.
+                 */
+                baseCnt[j+groupOfElements->baseOffset]++;
+            }
+            else
+            {
+                /*  RO_MASK is not set and therefore a decrease is against
+                 *  the direction of interest: decrement
+                 */
+                baseCnt[j+groupOfElements->baseOffset]--;
+            }
+        }
+        /* deltaCnt is either 0, less than threshold, or greater than
+           threshold, never negative. */
+        else if(deltaCnt[j]<(groupOfElements->arrayPtr[j])->threshold
+                 && !(ctsStatusReg & PAST_EVNT))
+        {    //if delta counts is positive but less than threshold,
+            remainder = 1;
+            switch ((ctsStatusReg & TRIDOI_FAST))
+            {
+            case TRIDOI_VSLOW:
+                tempCnt = 0;
+                break;
+            case TRIDOI_SLOW://slow
+                remainder = 2;
+                tempCnt = 0;
+                break;
+            case TRIDOI_MED://medium
+                tempCnt = tempCnt/4;
+                baseCnt[j+groupOfElements->baseOffset] = 3*(baseCnt[j+groupOfElements->baseOffset]/4);
+                break;
+            case TRIDOI_FAST://fast
+                tempCnt = tempCnt/2;
+                baseCnt[j+groupOfElements->baseOffset] = (baseCnt[j+groupOfElements->baseOffset]/2);
+                break;
+            }
+          /*
+           *  Base_Capacitance = (Measured_Capacitance/Z) +
+           *  Y*(Base_Capacitance/Z)
+           */
+          baseCnt[j+groupOfElements->baseOffset] += tempCnt;
+          if(groupOfElements->halDefinition & RO_MASK)
+          {
+                /*  If the RO_MASK is set then the direction of interest is
+                 *  decreasing (counts decrease with capacitance) and
+                 *  therefore movement in the direction of interest would
+                 *  be a decrease: decrement.
+                 */
+              baseCnt[j+groupOfElements->baseOffset]-= remainder;
+          }
+          else
+          {
+                /*  RO_MASK is not set and therefore an increase is in the
+                 *  direction of interest: increment
+                 */
+              baseCnt[j+groupOfElements->baseOffset]+= remainder;
+          }
+        }
+        //if delta counts above the threshold, event has occurred
+        else if(deltaCnt[j]>=(groupOfElements->arrayPtr[j])->threshold)
+        {
+          ctsStatusReg |= EVNT;
+          ctsStatusReg |= PAST_EVNT;
+        }
+        }
+    }// end of for-loop
+    if(!(ctsStatusReg & EVNT))
+    {
+      ctsStatusReg &= ~PAST_EVNT;
+    }
+} // TI_CAPT_Custom_ALT
 
 /***************************************************************************//**
  * @brief   Determine if a button is being pressed

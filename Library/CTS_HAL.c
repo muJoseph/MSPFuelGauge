@@ -90,6 +90,7 @@
  */
 
 #include "CTS_HAL.h"
+#include "mujoe_types.h"
 
 #ifdef RO_COMPB_TB0_WDTA
 /*!
@@ -1959,7 +1960,109 @@ void TI_CTS_RO_PINOSC_TA0_WDTp_HAL(const struct Sensor *group,uint16_t *counts)
     IE1 = contextSaveIE1;
     WDTCTL = contextSaveWDTCTL;
     TA0CTL = contextSaveTA0CTL;
-}
+
+} // TI_CTS_RO_PINOSC_TA0_WDTp_HAL
+
+/*!
+ *  @ fn:    TI_CTS_RO_PINOSC_TA0_WDTp_HAL_ALT
+ *
+ *  @brief   RO method capactiance measurement with PinOsc IO, TimerA0, and WDT+
+ *
+ *  \n       Schematic Description:
+ *
+ *  \n       element-----+->Px.y
+ *
+ *  \n       The WDT+ interval represents the measurement window.  The number of
+ *           counts within the TA0R that have accumulated during the measurement
+ *           window represents the capacitance of the element.
+ *
+ *  @param   group Pointer to the structure describing the Sensor to be measured
+ *  @param   counts Pointer to where the measurements are to be written
+ *  @param   pOverFlow Pointer to overflow flag. If TRUE, timer count has overflowed during measurement
+ *                     accumulation cycle. FALSE, if otherwise.
+ *  @return  none
+ */
+void TI_CTS_RO_PINOSC_TA0_WDTp_HAL_ALT( const struct Sensor *group, uint16_t *counts, bool *pOverFlow )
+{
+    uint8_t i;
+
+//** Context Save
+//  Status Register:
+//  WDTp: IE1, WDTCTL
+//  TIMERA0: TA0CTL
+//  Ports: PxSEL, PxSEL2
+    uint8_t contextSaveSR;
+    uint8_t contextSaveIE1;
+    uint16_t contextSaveWDTCTL;
+    uint16_t contextSaveTA0CTL; //,contextSaveTA0CCTL1,contextSaveTA0CCR1;
+    uint8_t contextSaveSel,contextSaveSel2;
+
+    contextSaveSR = __get_SR_register();
+    contextSaveIE1 = IE1;
+    contextSaveWDTCTL = WDTCTL;
+    contextSaveWDTCTL &= 0x00FF;
+    contextSaveWDTCTL |= WDTPW;
+    contextSaveTA0CTL = TA0CTL;
+
+//** Setup Measurement timer***************************************************
+// Choices are TA0,TA1,TB0,TB1,TD0,TD1 these choices are pushed up into the
+// capacitive touch layer.
+
+    // Configure and Start Timer
+    TA0CTL = (TASSEL_3);                // INCLK, continuous mode
+    IE1 |= WDTIE;                         // enable WDT interrupt
+    for (i = 0; i<(group->numElements); i++)
+    {
+        // Context Save
+        contextSaveSel = *((group->arrayPtr[i])->inputPxselRegister);
+        contextSaveSel2 = *((group->arrayPtr[i])->inputPxsel2Register);
+          // Configure Ports for relaxation oscillator
+          *((group->arrayPtr[i])->inputPxselRegister) &= ~((group->arrayPtr[i])->inputBits);
+          *((group->arrayPtr[i])->inputPxsel2Register) |= ((group->arrayPtr[i])->inputBits);
+        //**  Setup Gate Timer ********************************************************
+        // Set duration of sensor measurement
+        WDTCTL = (WDTPW+WDTTMSEL+(group->measGateSource)+(group->accumulationCycles));
+        TA0CTL |= (MC_2+TACLR);                          // Clear Timer_A TAR
+        TA0CTL &= ~TAIFG;
+        if(group->measGateSource == GATE_WDT_ACLK)
+        {
+            __bis_SR_register(LPM3_bits+GIE);   // Wait for WDT interrupt
+        }
+        else
+        {
+            __bis_SR_register(LPM0_bits+GIE);   // Wait for WDT interrupt
+        }
+        TA0CTL &= ~MC_2;                    // Stop Timer_A TAR
+        WDTCTL = WDTPW + WDTHOLD;           // Stop watchdog timer
+        if(TA0CTL & TAIFG)
+        {
+            // check for timer overflow
+            counts[i] = 0;
+            *pOverFlow = TRUE;              // Timer count has overflowed, set flag
+        }
+        else
+        {
+            counts[i] = TA0R;               // Save result
+            *pOverFlow = FALSE;             // Timer count has NOT overflowed, clear flag
+        }
+
+        // Context Restore
+        *((group->arrayPtr[i])->inputPxselRegister) = contextSaveSel;
+        *((group->arrayPtr[i])->inputPxsel2Register) = contextSaveSel2;
+    }
+    // End Sequence
+    // Context Restore
+    __bis_SR_register(contextSaveSR);
+    if(!(contextSaveSR & GIE))
+    {
+        __bic_SR_register(GIE);   //
+    }
+    IE1 = contextSaveIE1;
+    WDTCTL = contextSaveWDTCTL;
+    TA0CTL = contextSaveTA0CTL;
+
+} // TI_CTS_RO_PINOSC_TA0_WDTp_HAL_ALT
+
 #endif
 
 #ifdef RO_PINOSC_TA0 

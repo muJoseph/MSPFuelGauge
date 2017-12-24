@@ -41,11 +41,13 @@ typedef struct i2cSlave_def
 {
     uint8           myI2cSlaveAddr;
     uint8           cfg;
+    bool            contDataCollection;
 
 }i2cSlave_t;
 
 typedef struct i2cSlaveIsr_def
 {
+    volatile bool    busActive;          // If TRUE, USCI peripheral is currently in an I2C transaction with I2C Bus master. If FALSE, USCI is idle.
     volatile bool    rx;                 // If TRUE, USCI is in Slave Receiver mode. If FALSE, USCI is in Slave transmitter mode
     volatile uint8   *pRxBuff;           // Pointer to RX buffer
     volatile uint8   rxBuffIndex;        // Current index of the RX buffer
@@ -58,6 +60,9 @@ typedef struct i2cSlaveIsr_def
 // FUNCTION PROTOS
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+bool i2cSlave_contDataCollect( void );
+bool i2cSlave_resumeI2cMasterReads( void );
+bool i2cSlave_suspendI2cMasterReads( void );
 void i2cSlave_prepTransmit( void );
 bool i2cSlave_initDriver( uint8 myAddr, bool genCallRsp );
 bool i2cSlave_initHardware( void );

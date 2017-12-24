@@ -38,12 +38,15 @@ void fuelProbeMgr_initProbe( void )
 
 } // fuelProbeMgr_initProbe
 
-uint16 fuelProbeMgr_performMeasurement( void )
+fuelProbeMgr_t fuelProbeMgr_performMeasurement( void )
 {
    // Get the raw delta counts for element characterization
-   uint16_t deltaCount = 0;
-   TI_CAPT_Custom( &fuelprobe_sensor, &deltaCount );
-   return deltaCount;
+   fuelProbeMgr_t          fuelProbeMgr;
+
+   TI_CAPT_Custom_ALT( &fuelprobe_sensor, &fuelProbeMgr.countDelta, &fuelProbeMgr.rawOverFlow, &fuelProbeMgr.countRaw );     // TEST
+   //TI_CAPT_Custom( &fuelprobe_sensor, &deltaCount );                                    // DEFAULT
+
+   return fuelProbeMgr;
 
 } // fuelProbeMgr_performMeasurement
 

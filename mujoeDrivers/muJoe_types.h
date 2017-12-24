@@ -39,5 +39,12 @@ typedef enum
 typedef bool boolean;
 typedef bool bool_t;
 
+// Generic State Machine Variable
+typedef struct genericStateMachine_def
+{
+    uint8       s;      // Current State Machine State
+    uint8       f;      // Current State Machine Flags
+
+}genSm_t;
 
 #endif /* MUJOE_TYPES_H_ */

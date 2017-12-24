@@ -115,9 +115,11 @@ void TI_CAPT_Reset_Tracking(void);
 void TI_CAPT_Update_Tracking_DOI(uint8_t);
 void TI_CAPT_Update_Tracking_Rate(uint8_t);
 
-void TI_CAPT_Raw(const struct Sensor*, uint16_t*);
+void TI_CAPT_Raw(const struct Sensor*, uint16_t*);                  // DEFAULT
+void TI_CAPT_Raw_ALT(const struct Sensor*, uint16_t *, bool * );    // CUSTOM
 
-void TI_CAPT_Custom(const struct Sensor *, uint16_t*);
+void TI_CAPT_Custom(const struct Sensor *, uint16_t*);              // DEFAULT
+void TI_CAPT_Custom_ALT(const struct Sensor*, uint16_t *, bool *, uint16_t * ); // CUSTOM
 
 uint8_t TI_CAPT_Button(const struct Sensor *);
 const struct Element * TI_CAPT_Buttons(const struct Sensor *);

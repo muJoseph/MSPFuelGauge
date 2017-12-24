@@ -20,6 +20,7 @@
 
 extern void mspfg_configRegWriteCb( uint8 regData );
 extern void mspfg_fuelLvlCritThreshRegWriteCb( uint8 regData );
+extern void mspfg_statusRegWriteCb( uint8 regData );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // STATIC FUNCTION PROTOS
@@ -56,6 +57,13 @@ const static mspfg_regWriteHndl_t   mspfg_regWriteHndls[MSPFG_NUM_REG_WRITE_ACCE
           .regWriteCb = mspfg_fuelLvlCritThreshRegWriteCb,
      },
 
+     // Status register
+     {
+          .addr = MSPFG_STATUS,
+          .regWriteCb = mspfg_statusRegWriteCb,
+     },
+
+
 }; // mspfg_regWriteHndls
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -84,6 +92,12 @@ bool mspfg_writeReg( mspfg_regAddr_t addr, uint8 regData )
       case MSPFG_FUEL_LVL_CRIT_THRESH:
         mspfgRegMap[MSPFG_FUEL_LVL_CRIT_THRESH] = regData;
         mspfg_dispatchRegWriteHdlr( MSPFG_FUEL_LVL_CRIT_THRESH, regData );
+        retVal = TRUE;
+        break;
+      // Status register
+      case MSPFG_STATUS:
+        mspfgRegMap[MSPFG_STATUS] = regData;
+        mspfg_dispatchRegWriteHdlr( MSPFG_STATUS, regData );
         retVal = TRUE;
         break;
       default:
