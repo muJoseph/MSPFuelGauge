@@ -19,7 +19,7 @@
 
 static void i2cSlave_prepReceive( void );
 static void i2cSlave_parseRxdPacket( void );
-static void i2cSlave_handleI2cCommand( uint8 i2cCmd );
+static void i2cSlave_handleI2cCommand( mspfg_i2cCmds_t i2cCmd );
 static void i2cSlave_pauseUSCI( void );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -229,7 +229,7 @@ static void i2cSlave_parseRxdPacket( void )
         uint8 rxdI2cCmd = i2cSlaveIsr.pRxBuff[0];
         // Ensure that MSBit is set to signify I2C command
         if( rxdI2cCmd & 0x80 )
-          i2cSlave_handleI2cCommand( rxdI2cCmd );
+          i2cSlave_handleI2cCommand( (mspfg_i2cCmds_t)rxdI2cCmd );
     }
     // Register(s) write
     else if( numRxBytes >= 2 )
@@ -247,7 +247,7 @@ static void i2cSlave_parseRxdPacket( void )
 
 } //i2cSlave_parseRxdPacket
 
-static void i2cSlave_handleI2cCommand( uint8 i2cCmd )
+static void i2cSlave_handleI2cCommand( mspfg_i2cCmds_t i2cCmd )
 {
     switch( i2cCmd )
     {
@@ -267,6 +267,12 @@ static void i2cSlave_handleI2cCommand( uint8 i2cCmd )
             taskMgr_setEvent( mainTask_getTaskId(), MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
             break;
         case MSPFG_CMD_SLEEP:
+            break;
+        case MSPFG_CMD_UPDATE_BASELINE:
+            fuelProbeMgr_updateBaseline( 5 );
+            break;
+        case MSPFG_CMD_RESET:
+            mujoeCommon_softwareReset();
             break;
         // Invalid Command
         default:

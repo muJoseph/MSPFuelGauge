@@ -86,6 +86,7 @@ typedef struct sysClkConfig_def
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define stopWDT()                   (WDTCTL = WDTPW + WDTHOLD)
+#define startWDT()                  (WDTCTL = WDTPW)
 
 // Use as a dummy line of code to put break points on
 #define putBreakPtHere()            (__no_operation())
@@ -99,5 +100,6 @@ typedef struct sysClkConfig_def
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 void mujoeCommon_configClocks( sysClkConfig_t sysClkConfig );
+void mujoeCommon_softwareReset( void );
 
 #endif /* MUJOEDRIVERS_MUJOE_COMMON_H_ */

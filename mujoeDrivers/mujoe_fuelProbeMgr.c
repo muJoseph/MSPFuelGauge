@@ -38,6 +38,13 @@ void fuelProbeMgr_initProbe( void )
 
 } // fuelProbeMgr_initProbe
 
+void fuelProbeMgr_updateBaseline( uint8 numSamples )
+{
+   // Update baseline measurement
+   TI_CAPT_Update_Baseline( &fuelprobe_sensor, numSamples );
+
+} // fuelProbeMgr_updateBaseline
+
 fuelProbeMgr_t fuelProbeMgr_performMeasurement( void )
 {
    // Get the raw delta counts for element characterization

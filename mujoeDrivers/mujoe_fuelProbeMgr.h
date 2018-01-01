@@ -36,7 +36,7 @@ typedef struct fuelProbeMgr_def
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 void fuelProbeMgr_initProbe( void );
-//uint16 fuelProbeMgr_performMeasurement( void );
+void fuelProbeMgr_updateBaseline( uint8 numSamples );
 fuelProbeMgr_t fuelProbeMgr_performMeasurement( void );
 
 #endif /* MUJOEDRIVERS_MUJOE_FUELPROBEMGR_H_ */

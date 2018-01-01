@@ -92,6 +92,13 @@ void mujoeCommon_configClocks( sysClkConfig_t sysClkConfig )
 
 } // mujoeCommon_configClocks
 
+void mujoeCommon_softwareReset( void )
+{
+    startWDT();         // Start Watchdog timer
+    while(1);           // Trap in infinite loop, will cause POR
+
+} // mujoeCommon_softwareReset
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // STATIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////
