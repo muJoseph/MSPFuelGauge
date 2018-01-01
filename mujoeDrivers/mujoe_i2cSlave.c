@@ -264,6 +264,9 @@ static void i2cSlave_handleI2cCommand( mspfg_i2cCmds_t i2cCmd )
             break;
         case MSPFG_CMD_SINGLESHOT_DATA:
             i2cSlave.contDataCollection = FALSE;
+            // De-assert interrupt if enabled by host
+            if( mspfgRegMap[MSPFG_CFG] & MSPFG_CFG_EN_HW_INT )
+              MSPINTn_bringHIGH();
             taskMgr_setEvent( mainTask_getTaskId(), MAINTASK_GET_FUEL_PROBE_MEAS_EVT );
             break;
         case MSPFG_CMD_SLEEP:
